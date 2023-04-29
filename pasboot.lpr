@@ -266,12 +266,12 @@ begin
           begin
             RAMPZ := (RAMPZ and 1) or (buf[2] shl 1); // convert from word address to byte address
             uart_transmit(0);
-          end{$ifdef arduino};{$endif}
+          end{$ifndef arduino} else {$else};{$endif}
           {$endif declared(RAMPZ)}
 
           {$ifndef arduino}
           // Support for fuse bits
-          else if buf[0] = $50 then
+          if buf[0] = $50 then
           begin
             case buf[1] of
               0: uart_transmit(readFuseLockBits(deviceFuseLow_Z));
