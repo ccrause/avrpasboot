@@ -5,25 +5,29 @@ unit bootutils;
 interface
 
 const
-{$if defined(FPC_MCU_ATmega168)}
+{$if defined(FPC_MCU_ATmega168) or defined(FPC_MCU_ATmega168A) or defined(FPC_MCU_ATmega168P) or defined(FPC_MCU_ATmega168PA) or defined(FPC_MCU_ATmega168PB)}
   RAMSTART  = $100;
   NRWWSTART = $3800;
-{$elseif defined(FPC_MCU_ATmega328P) or defined(FPC_MCU_ATmega328)}
+{$elseif defined(FPC_MCU_ATmega328) or defined(FPC_MCU_ATmega328P) or defined(FPC_MCU_ATmega328PB)}
   RAMSTART  = $100;
   NRWWSTART = $7000;
-{$elseif defined (FPC_MCU_ATmega644P)}
+{$elseif defined (FPC_MCU_ATmega644) or defined (FPC_MCU_ATmega644P) or defined (FPC_MCU_ATmega644PA) or defined (FPC_MCU_ATmega644PB)}
   RAMSTART  = $100;
   NRWWSTART = $E000;
-{$elseif defined(FPC_MCU_ATtiny84)}
+{$elseif defined(FPC_MCU_ATtiny84) or defined(FPC_MCU_ATtiny84A)}
   RAMSTART  = $100;
   NRWWSTART = $0000;
 {$elseif defined(FPC_MCU_ATmega1280)}
   RAMSTART  = $200;
   NRWWSTART = $E000;
-{$elseif defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega88)}
+{$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P)  or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
+  RAMSTART  = $100;
+  NRWWSTART = $1800;
+{$elseif defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
   RAMSTART  = $100;
   NRWWSTART = $1800;
 {$endif}
+
   // Z register values to read signature/calibration info
   deviceSignature1_Z = 0;
   deviceSignature2_Z = 2;
