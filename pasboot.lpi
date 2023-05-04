@@ -49,7 +49,8 @@
             <CustomOptions Value="-Wpatmega328p
 -Sm
 -dF_CPU:=16000000
--dSTK500V1"/>
+-dstk500v1
+-sh"/>
             <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.3.1/ppcrossavr"/>
             <ExecuteAfter>
               <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
@@ -96,8 +97,61 @@
               <CompileReasons Compile="False" Build="False" Run="False"/>
             </ExecuteBefore>
             <ExecuteAfter>
-              <Command Value="avr-objdump -S $(targetfile)"/>
-              <CompileReasons Build="False" Run="False"/>
+              <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
+              <CompileReasons Run="False"/>
+            </ExecuteAfter>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="m2560-pp">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="pasboot"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <TargetCPU Value="avr"/>
+            <TargetOS Value="embedded"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf3"/>
+              <UseLineInfoUnit Value="False"/>
+            </Debugging>
+            <Options>
+              <PassLinkerOptions Value="True"/>
+              <LinkerOptions Value="--section-start=.text=0x3E000"/>
+            </Options>
+          </Linking>
+          <Other>
+            <Verbosity>
+              <ShowAll Value="True"/>
+            </Verbosity>
+            <ConfigFile>
+              <DontUseConfigFile Value="True"/>
+              <CustomConfigFile Value="True"/>
+              <ConfigFilePath Value="~/fpc/gitlab-cc/fpc.cfg"/>
+            </ConfigFile>
+            <CustomOptions Value="-Wpatmega2560
+-Sm
+-dF_CPU:=16000000
+-Cdszc
+-Xm
+-dstk500v1"/>
+            <CompilerPath Value="/home/christo/fpc/gitlab-cc/compiler/avr/pp"/>
+            <ExecuteBefore>
+              <CompileReasons Compile="False" Build="False" Run="False"/>
+            </ExecuteBefore>
+            <ExecuteAfter>
+              <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
+              <CompileReasons Run="False"/>
             </ExecuteAfter>
           </Other>
         </CompilerOptions>
@@ -117,6 +171,10 @@
       </Unit>
       <Unit>
         <Filename Value="bootutils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="customstartup.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>

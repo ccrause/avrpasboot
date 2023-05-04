@@ -11,13 +11,15 @@ program pasboot;
 {$inline on}
 
 uses
-  stk500, intrinsics, bootutils, uart, delay;
+  stk500, intrinsics, bootutils, uart, delay, customstartup;
 
 const
   lockBitMask = $C0;  // Undefined bits should be written as 1 for future compatibility
   LEDpin = 5;
 
 var
+  // Note: if RTL startup code is used, all variables will be uninitialized
+  // so ensure all variables are assigned before use.
   b, c: byte;
   buf: array[0..15] of byte;
   databuf: array [0..255] of byte;
@@ -151,8 +153,19 @@ begin
         if c = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          move(STK_SIGN_ON_MESSAGE, buf[0], length(STK_SIGN_ON_MESSAGE));
-          uart_transmit_buffer(@buf[0], length(STK_SIGN_ON_MESSAGE));
+          uart_transmit(ord('A'));
+          uart_transmit(ord('V'));
+          uart_transmit(ord('R'));
+          uart_transmit(ord(' '));
+          {$ifdef STK500V1}
+          uart_transmit(ord('S'));
+          uart_transmit(ord('T'));
+          uart_transmit(ord('K'));
+          {$else}
+          uart_transmit(ord('I'));
+          uart_transmit(ord('S'));
+          uart_transmit(ord('P'));
+          {$endif STK500V1}
           uart_transmit(Resp_STK_OK);
         end
         else
@@ -312,7 +325,7 @@ begin
           uart_transmit(Resp_STK_OK);
           {$else arduino}
           uart_transmit(0);
-          uart_transmit(Resp_STK_FAILED);
+          uart_transmit(Resp_STK_OK);
           {$endif ndef arduino}
         end
         else
