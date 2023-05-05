@@ -20,12 +20,17 @@ const
 {$elseif defined(FPC_MCU_ATmega1280)}
   RAMSTART  = $200;
   NRWWSTART = $E000;
-{$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P)  or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
+{$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P) or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
   RAMSTART  = $100;
   NRWWSTART = $1800;
 {$elseif defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
   RAMSTART  = $100;
-  NRWWSTART = $1800;
+  NRWWSTART = $1C00;
+  // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
+  // For all others we use predefined signaures like AVR-GCC does.
+  SIGNATURE_0 = $1E;
+  SIGNATURE_1 = $93;
+  SIGNATURE_2 = $07;
 {$endif}
 
   // Z register values to read signature/calibration info
@@ -66,16 +71,18 @@ const
 // Mapping between different naming conventions
   SPMenable = {$if declared(SPMEN)}SPMEN{$elseif declared(SELFPRGEN)}SELFPRGEN{$else}0{$endif};
 
+{$I bootutilsconsts.inc}
+
 procedure spm_busy_wait; inline;
 begin
   repeat
-  until (SPMCSR and (1 shl SPMenable)) = 0;
+  until (xSPMCSR and (1 shl SPMenable)) = 0;
 end;
 
 procedure eeprom_busy_wait; inline;
 begin
   repeat
-  until (EECR and (1 shl EEPE)) = 0;
+  until (EECR and (1 shl xEEPE)) = 0;
 end;
 
 function readSignatureCalibrationByte(const index: byte): byte; assembler; nostackframe;
@@ -86,7 +93,7 @@ asm
   ldi r31, 0
   mov r30, r24
   ldi r24, SigReadSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   lpm r24, Z
 end;
 
@@ -97,7 +104,7 @@ asm
   mov r30, r24
   ldi r31, 0
   ldi r24, BLBReadSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   lpm r24, Z
 end;
 
@@ -107,7 +114,7 @@ const
 asm
   mov r0, r24
   ldi r24, BLBWriteSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   spm
 end;
 
@@ -116,7 +123,7 @@ const
   RWWEnableSPM = (1 shl RWWSRE) or (1 shl SPMenable);
 asm
   ldi r24, RWWEnableSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   spm
 end;
 
@@ -136,7 +143,7 @@ const
 asm
   movw r30, r24
   ldi r24, pageEraseSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   spm
 end;
 
@@ -147,7 +154,7 @@ asm
   movw r0, r22
   movw r30, r24
   ldi r24, pageFillSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   spm
   clr r1
 end;
@@ -158,7 +165,7 @@ const
 asm
   movw r30, r24
   ldi r24, pageWriteSPM
-  out SPMCSR+(-32), r24
+  out xSPMCSR+(-32), r24
   spm
 end;
 
@@ -175,8 +182,8 @@ begin
   eeprom_busy_wait;
   EEAR := addr;
   EEDR := data;
-  EECR := (1 shl EEMPE);
-  EECR := (1 shl EEPE);
+  EECR := (1 shl xEEMPE);
+  EECR := (1 shl xEEPE);
 end;
 
 end.

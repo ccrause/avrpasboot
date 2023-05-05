@@ -83,15 +83,17 @@ const
   BAUD = 115200;
   UBRRValue = (((F_CPU + 4*BAUD) shr 3) div BAUD)-1;
 
+{$I bootutilsconsts.inc}
+
 begin
-  startupStatus := MCUSR;
-  MCUSR := 0;
+  startupStatus := xMCUSR;
+  xMCUSR := 0;
   // Disable watchdog
   avr_cli;
   avr_wdr;
-  MCUSR := MCUSR and ($FF xor (1 shl WDRF));
-  WDTCSR := (1 shl WDCE) or (1 shl WDE);
-  WDTCSR := 0;
+  xMCUSR := xMCUSR and ($FF xor (1 shl WDRF));
+  xWDTCSR := (1 shl WDCE) or (1 shl WDE);
+  xWDTCSR := 0;
   SREG := 0;
 
   uart_init(UBRRValue);
@@ -120,9 +122,9 @@ begin
   // this enables the watchdog interrupt which is used to start the main application
   avr_cli;
   avr_wdr;
-  MCUSR := MCUSR and ($FF xor (1 shl WDRF));
-  WDTCSR := (1 shl WDCE) or (1 shl WDE);
-  WDTCSR := (1 shl WDE) or 7; // 2s timeout
+  xMCUSR := xMCUSR and ($FF xor (1 shl WDRF));
+  xWDTCSR := (1 shl WDCE) or (1 shl WDE);
+  xWDTCSR := (1 shl WDE) or 7; // 2s timeout
   SREG := 0;
 
   LEDDDR := 1 shl LEDpin;
@@ -205,8 +207,8 @@ begin
       Cmnd_STK_LEAVE_PROGMODE:
       begin
         // Set watchdog to shortesst timeout (16ms)
-        WDTCSR := (1 shl WDCE) or (1 shl WDE);
-        WDTCSR := (1 shl WDE) or 0;
+        xWDTCSR := (1 shl WDCE) or (1 shl WDE);
+        xWDTCSR := (1 shl WDE) or 0;
         checkAndReply;
       end;
 
@@ -250,9 +252,17 @@ begin
           if buf[0] = $30 then  // Read signature byte
           begin
             case buf[2] of
+              // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
+              // For all others we use predefined signaures like AVR-GCC does.
+              {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
+              0: uart_transmit(SIGNATURE_0);
+              1: uart_transmit(SIGNATURE_1);
+              2: uart_transmit(SIGNATURE_2);
+              {$else}
               0: uart_transmit(readSignatureCalibrationByte(deviceSignature1_Z));
               1: uart_transmit(readSignatureCalibrationByte(deviceSignature2_Z));
               2: uart_transmit(readSignatureCalibrationByte(deviceSignature3_Z));
+              {$endif}
             otherwise
               uart_transmit(0);
             end;
@@ -392,9 +402,17 @@ begin
         if c = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
+          // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
+          // For all others we use predefined signaures like AVR-GCC does.
+          {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
+          uart_transmit(SIGNATURE_0);
+          uart_transmit(SIGNATURE_1);
+          uart_transmit(SIGNATURE_2);
+          {$else}
           uart_transmit(readSignatureCalibrationByte(deviceSignature1_Z));
           uart_transmit(readSignatureCalibrationByte(deviceSignature2_Z));
           uart_transmit(readSignatureCalibrationByte(deviceSignature3_Z));
+          {$endif}
           uart_transmit(Resp_STK_OK);
         end
         else
