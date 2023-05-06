@@ -20,7 +20,7 @@ var
   xEEPE = EEWE;
   xEEMPE = EEMWE;
 
-  {$define xMCUSR := MCUCR}
+  {$define xMCUSR := MCUCSR}
   {$define xWDTCSR := WDTCR}
 
 var
