@@ -156,6 +156,48 @@
           </Other>
         </CompilerOptions>
       </Item>
+      <Item Name="m8-3.2.2">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="pasboot"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <TargetCPU Value="avr"/>
+            <TargetOS Value="embedded"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf3"/>
+              <UseLineInfoUnit Value="False"/>
+            </Debugging>
+            <Options>
+              <PassLinkerOptions Value="True"/>
+              <LinkerOptions Value="--section-start=.text=0x1800"/>
+            </Options>
+          </Linking>
+          <Other>
+            <Verbosity>
+              <ShowAll Value="True"/>
+            </Verbosity>
+            <CustomOptions Value="-Wpatmega8
+-Sm
+-dF_CPU:=8000000
+-dstk500v1"/>
+            <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.2.2/ppcrossavr"/>
+            <ExecuteAfter>
+              <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
+            </ExecuteAfter>
+          </Other>
+        </CompilerOptions>
+      </Item>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
