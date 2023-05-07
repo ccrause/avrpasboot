@@ -179,10 +179,15 @@ asm
   spm
 end;
 
+// TODO: Perhaps also change addr parameter to byte size if EEAR is not declared.
 function EEPROMReadByte(const addr: uint16): byte;
 begin
   eeprom_busy_wait;
+  {$if declared(EEAR)}
   EEAR := addr;
+  {$else}
+  EEARL := byte(addr);
+  {$endif}
   EECR := (1 shl EERE);
   Result := EEDR;
 end;
@@ -190,7 +195,11 @@ end;
 procedure EEPROMWriteByte(const addr: uint16; const data: byte);
 begin
   eeprom_busy_wait;
+  {$if declared(EEAR)}
   EEAR := addr;
+  {$else}
+  EEARL := byte(addr);
+  {$endif}
   EEDR := data;
   EECR := (1 shl xEEMPE);
   EECR := (1 shl xEEPE);
