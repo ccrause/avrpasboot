@@ -52,7 +52,9 @@ function readSignatureCalibrationByte(const index: byte): byte;
 function readFuseLockBits(const index: byte): byte;
 procedure writeLockBits(const lockBits: byte);
 
+{$if declared(RWWSRE)}
 procedure enableRWW;
+{$endif}
 
 // Byte sized address
 // For >64K flash size RAMPZ should be preconfigured,
@@ -99,6 +101,9 @@ end;
 
 function readFuseLockBits(const index: byte): byte; assembler; nostackframe;
 const
+  {$if declared(RFLB)}
+    {$define BLBSET:=RFLB}
+  {$endif}
   BLBReadSPM = (1 shl BLBSET) or (1 shl SPMenable);
 asm
   mov r30, r24
@@ -118,6 +123,7 @@ asm
   spm
 end;
 
+{$if declared(RWWSRE)}
 procedure enableRWW; assembler; nostackframe;
 const
   RWWEnableSPM = (1 shl RWWSRE) or (1 shl SPMenable);
@@ -126,6 +132,7 @@ asm
   out xSPMCSR+(-32), r24
   spm
 end;
+{$endif}
 
 function flashReadByte(const addr: uint16): byte; assembler; nostackframe;
 asm
@@ -139,6 +146,9 @@ end;
 
 procedure flashPageErase(const address: uint16); assembler; nostackframe;
 const
+  {$if declared(CTPB)}
+    {$define PGERS:=CTPB}
+  {$endif}
   pageEraseSPM = (1 shl PGERS) or (1 shl SPMenable);
 asm
   movw r30, r24
