@@ -18,6 +18,8 @@ const
   LEDpin = 5;
 
 var
+  // Note: if no RTL startup code is used, all variables will be uninitialized
+  // so ensure all variables are assigned before use.
   b, c: byte;
   buf: array[0..15] of byte;
   databuf: array [0..255] of byte;
@@ -79,11 +81,12 @@ begin
     uart_transmit(Resp_STK_NOSYNC);
 end;
 
-const
-  BAUD = 115200;
-  UBRRValue = (((F_CPU + 4*BAUD) shr 3) div BAUD)-1;
-
 {$I bootutilsconsts.inc}
+
+{$if declared(WDTOE)}
+const
+  WDCE = WDTOE; // atmega16 seems to be the exception
+{$endif}
 
 begin
   startupStatus := xMCUSR;
@@ -95,8 +98,6 @@ begin
   xWDTCSR := (1 shl WDCE) or (1 shl WDE);
   xWDTCSR := 0;
   SREG := 0;
-
-  uart_init(UBRRValue);
 
   { Read reset cause
     If reset cause = 0 it means application code ran into bootloader, so probably
