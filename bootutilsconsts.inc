@@ -42,4 +42,15 @@ const
 var
   xSPMCSR : byte absolute $00+$57;
 
+  {$elseif defined(FPC_MCU_ATtiny13) or defined(FPC_MCU_ATtiny13A) or defined(FPC_MCU_ATtiny85)}
+const
+  xEEPE = EEWE;
+  xEEMPE = EEMWE;
+
+  {$define xMCUSR := MCUCR}
+  {$define xWDTCSR := WDTCR}
+
+var
+  xSPMCSR : byte absolute $00+$57;
+
 {$endif}
