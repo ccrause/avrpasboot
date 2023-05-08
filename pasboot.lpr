@@ -22,7 +22,7 @@ var
   // so ensure all variables are assigned before use.
   b, c: byte;
   buf: array[0..15] of byte;
-  databuf: array [0..255] of byte;
+  databuf: array [0..flashPageSize-1] of byte;
   // Information not yet used, so could be removed in future
   deviceParams: TDeviceParameters;
   deviceParamsEx: TDeviceParametersEx;

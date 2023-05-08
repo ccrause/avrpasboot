@@ -44,6 +44,36 @@ const
   deviceFuseExt_Z = 2;
   deviceLockbits_Z = 1;
 
+{$if defined(CPUAVR6) or defined(CPUAVR51)}
+  flashPageSize = 256;
+{$elseif defined(CPUAVR5)}
+  {$if (FPC_FLASHSIZE > 32768) or defined(FPC_MCU_AT90CAN32) or defined(FPC_MCU_AT90CAN64)}
+  flashPageSize = 256;
+  {$else}
+  flashPageSize = 128;
+  {$endif}
+{$elseif defined(CPUAVR4)}
+  {$if defined(FPC_MCU_ATA6285) or defined(FPC_MCU_ATA6286)}
+  flashPageSize = 128;
+  {$else}
+  flashPageSize = 64;
+  {$endif}
+{$elseif defined(CPUAVR35)}
+  {$if defined(FPC_MCU_ATTINY1634)}
+  flashPageSize = 32;
+  {$else}
+  flashPageSize = 128;
+  {$endif}
+{$elseif defined(CPUAVR25)}
+  {$if defined(FPC_MCU_ATTINY87)}
+  flashPageSize = 128;
+  {$elseif FPC_FLASHSIZE >= 4096}
+  flashPageSize = 64;
+  {$else}
+  flashPageSize = 32;
+  {$endif}
+{$endif}
+
 procedure spm_busy_wait; inline;
 procedure eeprom_busy_wait; inline;
 
