@@ -74,6 +74,9 @@ const
   {$endif}
 {$endif}
 
+type
+  TEEPROMAddress = {$if FPC_EEPROMSIZE > 256}uint16{$else}byte{$endif};
+
 procedure spm_busy_wait; inline;
 procedure eeprom_busy_wait; inline;
 
@@ -94,8 +97,8 @@ procedure flashPageErase(const address: uint16);
 procedure flashPageFill(const address, data: uint16);
 procedure flashPageWrite(const address: uint16);
 
-function EEPROMReadByte(const addr: uint16): byte;
-procedure EEPROMWriteByte(const addr: uint16; const data: byte);
+function EEPROMReadByte(const addr: TEEPROMAddress): byte;
+procedure EEPROMWriteByte(const addr: TEEPROMAddress; const data: byte);
 
 implementation
 
@@ -210,25 +213,29 @@ asm
 end;
 
 // TODO: Perhaps also change addr parameter to byte size if EEAR is not declared.
-function EEPROMReadByte(const addr: uint16): byte;
+function EEPROMReadByte(const addr: TEEPROMAddress): byte;
 begin
   eeprom_busy_wait;
-  {$if declared(EEAR)}
+  {$if FPC_EEPROMSIZE > 256}
   EEAR := addr;
+  {$elseif declared(EEARL)}
+  EEARL := addr;
   {$else}
-  EEARL := byte(addr);
+  EEAR := addr;
   {$endif}
   EECR := (1 shl EERE);
   Result := EEDR;
 end;
 
-procedure EEPROMWriteByte(const addr: uint16; const data: byte);
+procedure EEPROMWriteByte(const addr: TEEPROMAddress; const data: byte);
 begin
   eeprom_busy_wait;
-  {$if declared(EEAR)}
+  {$if FPC_EEPROMSIZE > 256}
   EEAR := addr;
+  {$elseif declared(EEARL)}
+  EEARL := addr;
   {$else}
-  EEARL := byte(addr);
+  EEAR := addr;
   {$endif}
   EEDR := data;
   EECR := (1 shl xEEMPE);
