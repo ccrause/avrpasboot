@@ -14,94 +14,7 @@
       <ResourceType Value="res"/>
     </General>
     <BuildModes>
-      <Item Name="Default" Default="True"/>
-      <Item Name="m328p">
-        <CompilerOptions>
-          <Version Value="11"/>
-          <Target>
-            <Filename Value="pasboot"/>
-          </Target>
-          <SearchPaths>
-            <IncludeFiles Value="$(ProjOutDir)"/>
-            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
-          </SearchPaths>
-          <CodeGeneration>
-            <TargetCPU Value="avr"/>
-            <TargetOS Value="embedded"/>
-            <Optimizations>
-              <OptimizationLevel Value="3"/>
-            </Optimizations>
-          </CodeGeneration>
-          <Linking>
-            <Debugging>
-              <DebugInfoType Value="dsDwarf3"/>
-              <UseLineInfoUnit Value="False"/>
-            </Debugging>
-            <Options>
-              <PassLinkerOptions Value="True"/>
-              <LinkerOptions Value="--section-start=.text=0x7000"/>
-            </Options>
-          </Linking>
-          <Other>
-            <Verbosity>
-              <ShowAll Value="True"/>
-            </Verbosity>
-            <CustomOptions Value="-Wpatmega328p
--Sm
--dF_CPU:=16000000
--dSTK500V1"/>
-            <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.3.1/ppcrossavr"/>
-            <ExecuteAfter>
-              <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
-            </ExecuteAfter>
-          </Other>
-        </CompilerOptions>
-      </Item>
-      <Item Name="m2560">
-        <CompilerOptions>
-          <Version Value="11"/>
-          <Target>
-            <Filename Value="pasboot"/>
-          </Target>
-          <SearchPaths>
-            <IncludeFiles Value="$(ProjOutDir)"/>
-            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
-          </SearchPaths>
-          <CodeGeneration>
-            <TargetCPU Value="avr"/>
-            <TargetOS Value="embedded"/>
-            <Optimizations>
-              <OptimizationLevel Value="3"/>
-            </Optimizations>
-          </CodeGeneration>
-          <Linking>
-            <Debugging>
-              <DebugInfoType Value="dsDwarf3"/>
-              <UseLineInfoUnit Value="False"/>
-            </Debugging>
-            <Options>
-              <PassLinkerOptions Value="True"/>
-              <LinkerOptions Value="--section-start=.text=0x3E000"/>
-            </Options>
-          </Linking>
-          <Other>
-            <Verbosity>
-              <ShowAll Value="True"/>
-            </Verbosity>
-            <CustomOptions Value="-Wpatmega2560
--Sm
--dF_CPU:=16000000"/>
-            <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.3.1/ppcrossavr"/>
-            <ExecuteBefore>
-              <CompileReasons Compile="False" Build="False" Run="False"/>
-            </ExecuteBefore>
-            <ExecuteAfter>
-              <Command Value="avr-objdump -S $(targetfile)"/>
-              <CompileReasons Build="False" Run="False"/>
-            </ExecuteAfter>
-          </Other>
-        </CompilerOptions>
-      </Item>
+      <Item Name="m328p" Default="True"/>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -153,9 +66,8 @@
       </Verbosity>
       <CustomOptions Value="-Wpatmega328p
 -Sm
--dF_CPU:=16000000
--dSTK500V1"/>
-      <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.3.1/ppcrossavr"/>
+-dF_CPU:=16000000"/>
+      <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.2.2/ppcrossavr"/>
       <ExecuteAfter>
         <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
       </ExecuteAfter>

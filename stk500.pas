@@ -16,11 +16,7 @@ interface
 // *****************[ STK Message constants ]***************************
 
 const
- {$ifdef STK500v1}
   STK_SIGN_ON_MESSAGE       = 'AVR STK';   // Sign on string for Cmnd_STK_GET_SIGN_ON
-  {$else}
-  STK_SIGN_ON_MESSAGE       = 'AVR ISP';   // Sign on string for Cmnd_STK_GET_SIGN_ON
-  {$endif}
 // *****************[ STK Response constants ]***************************
   Resp_STK_OK               = $10;
   Resp_STK_FAILED           = $11;

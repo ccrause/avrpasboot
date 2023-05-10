@@ -1,11 +1,8 @@
 program pasboot;
 
-{ By default the bootloader supports the "stk500v1", "avrisp" and "arduino" programmer types
-  of avrdude. This supports many of the commands according to document AVR061.
-
-  By defining "arduino", a smaller subset of AVR061 commands are supported, similar
-  to the optiboot project. This results in a smaller bootloader. This mode only
-  supports the avrdude programmer type "arduino".
+{ AvrPasBoot supports some of the stk500v1 protocol as described in AVR061.
+  The supported commands should be compatible with the "stk500v1",
+  "avrisp" and "arduino" programmer types of avrdude.
 }
 
 {$inline on}
@@ -81,22 +78,15 @@ begin
     uart_transmit(Resp_STK_NOSYNC);
 end;
 
-{$I bootutilsconsts.inc}
-
-{$if declared(WDTOE)}
-const
-  WDCE = WDTOE; // atmega16 seems to be the exception
-{$endif}
-
 begin
-  startupStatus := xMCUSR;
-  xMCUSR := 0;
+  startupStatus := MCUSR;
+  MCUSR := 0;
   // Disable watchdog
   avr_cli;
   avr_wdr;
-  xMCUSR := xMCUSR and ($FF xor (1 shl WDRF));
-  xWDTCSR := (1 shl WDCE) or (1 shl WDE);
-  xWDTCSR := 0;
+  MCUSR := MCUSR and ($FF xor (1 shl WDRF));
+  WDTCSR := (1 shl WDCE) or (1 shl WDE);
+  WDTCSR := 0;
   SREG := 0;
 
   { Read reset cause
@@ -115,7 +105,7 @@ begin
     LEDport := 0;
     LEDDDR := 0;
     asm
-      {$ifdef CPUAVR_HAS_JMP_CALL}jmp 0{$else}rjmp 0{$endif}
+      jmp 0
     end;
   end;
 
@@ -123,9 +113,9 @@ begin
   // this enables the watchdog interrupt which is used to start the main application
   avr_cli;
   avr_wdr;
-  xMCUSR := xMCUSR and ($FF xor (1 shl WDRF));
-  xWDTCSR := (1 shl WDCE) or (1 shl WDE);
-  xWDTCSR := (1 shl WDE) or 7; // 2s timeout
+  MCUSR := MCUSR and ($FF xor (1 shl WDRF));
+  WDTCSR := (1 shl WDCE) or (1 shl WDE);
+  WDTCSR := (1 shl WDE) or 7; // 2s timeout
   SREG := 0;
 
   LEDDDR := 1 shl LEDpin;
@@ -145,7 +135,6 @@ begin
 
       //Cmnd_STK_GET_SYNC:
 
-      {$ifndef arduino}
       Cmnd_STK_GET_SIGN_ON:
       begin
         c := uart_receive;
@@ -159,9 +148,7 @@ begin
         else
           uart_transmit(Resp_STK_NOSYNC);
       end;
-      {$endif}
 
-      {$ifndef arduino}
       Cmnd_STK_SET_PARAMETER:
       begin
         uart_receive_buffer(@buf[0], 3);
@@ -174,16 +161,13 @@ begin
         else
           uart_transmit(Resp_STK_NOSYNC);
       end;
-      {$endif}
 
       Cmnd_STK_GET_PARAMETER:
       begin
         b := uart_receive;
         case b of
-          //Parm_STK_HW_VER:          checkAndReplyByte(2);
           Parm_STK_SW_MAJOR:        checkAndReplyByte(1);
           Parm_STK_SW_MINOR:        checkAndReplyByte(18);
-          //Parm_STK_PROGMODE:        checkAndReplyByte(ord('S'));
         else
           checkAndReplyByte(3);
         end;
@@ -208,8 +192,8 @@ begin
       Cmnd_STK_LEAVE_PROGMODE:
       begin
         // Set watchdog to shortesst timeout (16ms)
-        xWDTCSR := (1 shl WDCE) or (1 shl WDE);
-        xWDTCSR := (1 shl WDE) or 0;
+        WDTCSR := (1 shl WDCE) or (1 shl WDE);
+        WDTCSR := (1 shl WDE) or 0;
         checkAndReply;
       end;
 
@@ -232,12 +216,6 @@ begin
       begin
         uart_receive_buffer(@buf[0], 2);
         address := buf[0] + word(buf[1]) shl 8;
-        {$if declared(RAMPZ)}
-        if (address and $8000) = 0 then
-          RAMPZ := RAMPZ and $FE
-        else
-          RAMPZ := RAMPZ or 1;
-        {$endif}
         // Convert from word to byte address
         address := address shl 1;
         checkAndReply;
@@ -249,40 +227,18 @@ begin
         if buf[4] = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          {$ifndef arduino}
           if buf[0] = $30 then  // Read signature byte
           begin
             case buf[2] of
-              // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
-              // For all others we use predefined signaures like AVR-GCC does.
-              {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
-              0: uart_transmit(SIGNATURE_0);
-              1: uart_transmit(SIGNATURE_1);
-              2: uart_transmit(SIGNATURE_2);
-              {$else}
               0: uart_transmit(readSignatureCalibrationByte(deviceSignature1_Z));
               1: uart_transmit(readSignatureCalibrationByte(deviceSignature2_Z));
               2: uart_transmit(readSignatureCalibrationByte(deviceSignature3_Z));
-              {$endif}
             otherwise
               uart_transmit(0);
             end;
           end
-          else
-          {$endif}
-
-          {$if declared(RAMPZ)}
-          // Handle extended address byte
-          if buf[0] = $4D then
-          begin
-            RAMPZ := (RAMPZ and 1) or (buf[2] shl 1); // convert from word address to byte address
-            uart_transmit(0);
-          end{$ifndef arduino} else {$else};{$endif}
-          {$endif declared(RAMPZ)}
-
-          {$ifndef arduino}
           // Support for fuse bits
-          if buf[0] = $50 then
+          else if buf[0] = $50 then
           begin
             case buf[1] of
               0: uart_transmit(readFuseLockBits(deviceFuseLow_Z));
@@ -295,7 +251,7 @@ begin
             uart_transmit(readFuseLockBits(deviceFuseHigh_Z))
           else if (buf[0] = $AC) and (buf[1] = $80) then
           begin
-            //eraseChip;  Erasure of all memory not supported. Memory is erased just before being written n page or byte level.
+            //eraseChip;  Erasure of all memory is not supported. Memory is erased just before being written n page or byte level.
             // Note: this implies that old data cannot be deleted unless it is overwritten by new data.
             uart_transmit(0);
           end
@@ -311,10 +267,6 @@ begin
           else
             uart_transmit(0);  // dummy reply
           uart_transmit(Resp_STK_OK);
-          {$else arduino}
-          uart_transmit(0);
-          uart_transmit(Resp_STK_FAILED);
-          {$endif ndef arduino}
         end
         else
           uart_transmit(Resp_STK_NOSYNC);
@@ -328,15 +280,7 @@ begin
       begin
         uart_receive_buffer(@buf[0], 3);
         size := (word(buf[0]) shl 8) + buf[1];   // TODO: Check if size is larger that page size?
-        // If page size > 128 (i.e. 256),
-        // break read into 2
-        if size > 128 then
-        begin
-          uart_receive_buffer(@databuf[0], 128);
-          uart_receive_buffer(@databuf[128], 128);
-        end
-        else
-          uart_receive_buffer(@databuf[0], size);
+        uart_receive_buffer(@databuf[0], size);
         begin
           if char(buf[2]) = 'F' then
           begin
@@ -351,9 +295,7 @@ begin
             end;
             flashPageWrite(address);
             spm_busy_wait;
-            {$if declared(RWWSRE)}
             enableRWW;
-            {$endif}
           end
           else // program EEPROM
           begin
@@ -403,17 +345,9 @@ begin
         if c = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
-          // For all others we use predefined signaures like AVR-GCC does.
-          {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
-          uart_transmit(SIGNATURE_0);
-          uart_transmit(SIGNATURE_1);
-          uart_transmit(SIGNATURE_2);
-          {$else}
           uart_transmit(readSignatureCalibrationByte(deviceSignature1_Z));
           uart_transmit(readSignatureCalibrationByte(deviceSignature2_Z));
           uart_transmit(readSignatureCalibrationByte(deviceSignature3_Z));
-          {$endif}
           uart_transmit(Resp_STK_OK);
         end
         else
