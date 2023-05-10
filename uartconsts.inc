@@ -19,8 +19,7 @@ const
   {$define xUCSR0C := UCSR0C}
   {$define xUDR0   := UDR0}
 
-{$elseif defined(FPC_MCU_ATtiny84) or defined(FPC_MCU_ATtiny84A)
-      or defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)
+{$elseif defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)
       or defined(FPC_MCU_ATmega16) or defined(FPC_MCU_ATmega16A)
       or defined(FPC_MCU_ATmega32) or defined(FPC_MCU_ATmeg32A)
       or defined(FPC_MCU_ATmega64) or defined(FPC_MCU_ATmega64A)}
