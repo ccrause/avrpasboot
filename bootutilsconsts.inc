@@ -16,7 +16,6 @@ var
   xSPMCSR : byte absolute $00+$57;
 
 {$elseif defined(FPC_MCU_ATtiny84) or defined(FPC_MCU_ATtiny84A)
-      or defined(FPC_MCU_ATmega1280)
       or defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)
       or defined(FPC_MCU_ATmega16) or defined(FPC_MCU_ATmega16A)
       or defined(FPC_MCU_ATmega32) or defined(FPC_MCU_ATmeg32A)
@@ -31,7 +30,8 @@ const
 var
   xSPMCSR : byte absolute $00+$57;
 
-{$elseif defined(FPC_MCU_ATtiny25) or defined(FPC_MCU_ATtiny45) or defined(FPC_MCU_ATtiny85)}
+{$elseif defined(FPC_MCU_ATtiny25) or defined(FPC_MCU_ATtiny45) or defined(FPC_MCU_ATtiny85)
+      or defined(FPC_MCU_ATtiny2313) or defined(FPC_MCU_ATtiny2313A) or defined(FPC_MCU_ATtiny4313)}
 const
   xEEPE = EEPE;
   xEEMPE = EEMPE;
@@ -42,7 +42,19 @@ const
 var
   xSPMCSR : byte absolute $00+$57;
 
-  {$elseif defined(FPC_MCU_ATtiny13) or defined(FPC_MCU_ATtiny13A) or defined(FPC_MCU_ATtiny85)}
+{$elseif defined(FPC_MCU_ATtiny24) or defined(FPC_MCU_ATtiny24A)
+      or defined(FPC_MCU_ATtiny44) or defined(FPC_MCU_ATtiny44A)}
+const
+  xEEPE = EEPE;
+  xEEMPE = EEMPE;
+
+  {$define xMCUSR := MCUSR}
+  {$define xWDTCSR := WDTCSR}
+
+var
+  xSPMCSR : byte absolute $00+$57;
+
+{$elseif defined(FPC_MCU_ATtiny13) or defined(FPC_MCU_ATtiny13A) or defined(FPC_MCU_ATtiny85)}
 const
   xEEPE = EEWE;
   xEEMPE = EEMWE;
