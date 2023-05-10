@@ -11,7 +11,6 @@ const
   xRXC0   = RXC0;
   xUDRE0  = UDRE0;
   xUCSZ0  = UCSZ0;
-  xURSEL0 = 0;
 
   {$define xUBRR0H := UBRR0H}
   {$define xUBRR0L := UBRR0L}
@@ -32,7 +31,6 @@ const
   xRXC0   = RXC;
   xUDRE0  = UDRE;
   xUCSZ0  = UCSZ;
-  xURSEL0 = URSEL;
 
   {$define xUBRR0H := UBRRH}
   {$define xUBRR0L := UBRRL}

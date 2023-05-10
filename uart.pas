@@ -33,7 +33,7 @@ begin
   xUCSR0B := (1 shl xRXEN0) or (1 shl xTXEN0);
 
   // Set frame format: 8data, 1stop bit, no parity
-  xUCSR0C := (1 shl xURSEL0) or (3 shl xUCSZ0);
+  xUCSR0C := {$if declared(URSEL)}(1 shl URSEL) or{$endif} (3 shl xUCSZ0);
 end;
 
 procedure uart_transmit(const data: byte);
