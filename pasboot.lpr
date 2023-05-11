@@ -134,7 +134,10 @@ begin
   LEDport := 0;
   delay_ms(100);
   LEDport := 1 shl LEDpin;
-  LEDDDR := 0;
+  delay_ms(100);
+  LEDport := 0;
+
+  uart_init;
 
   repeat
     b := uart_receive;
@@ -207,7 +210,7 @@ begin
 
       Cmnd_STK_LEAVE_PROGMODE:
       begin
-        // Set watchdog to shortesst timeout (16ms)
+        // Set watchdog to shortest timeout (16ms)
         xWDTCSR := (1 shl WDCE) or (1 shl WDE);
         xWDTCSR := (1 shl WDE) or 0;
         checkAndReply;
