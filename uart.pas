@@ -101,7 +101,7 @@ const
 
 procedure uart_transmit(const data: byte); assembler; nostackframe;
 label
-  setoutputbit, startdelay, delayloop, setoutputbitlow;
+  setoutputbit, startdelay, delayloop, setoutputbithigh;
 asm
   // r26 - bit delay count low
   // r27 - bit delay count high
@@ -113,10 +113,10 @@ asm
   sec                                            // 1
 
   setoutputbit:
-  brcc setoutputbitlow                           // 2, else 1
+  brcc setoutputbithigh                          // 2, else 1
   cbi TXPORT+(-32), TXPin                        // 1
   rjmp startdelay                                // 2
-  setoutputbitlow:
+  setoutputbithigh:
   sbi TXPORT+(-32), TXPin                        // 1
   nop                                            // 1
 
