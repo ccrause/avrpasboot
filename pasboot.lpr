@@ -337,11 +337,10 @@ begin
             uart_transmit(readSignatureCalibrationByte(deviceOscCal_Z))
           else
             uart_transmit(0);  // dummy reply
-          uart_transmit(Resp_STK_OK);
           {$else arduino}
-          uart_transmit(0);
-          uart_transmit(Resp_STK_FAILED);
+          uart_transmit(0);  // dummy reply
           {$endif ndef arduino}
+          uart_transmit(Resp_STK_OK);
         end
         else
           uart_transmit(Resp_STK_NOSYNC);
