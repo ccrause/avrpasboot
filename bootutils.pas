@@ -5,32 +5,62 @@ unit bootutils;
 interface
 
 const
-{$if defined(FPC_MCU_ATmega168) or defined(FPC_MCU_ATmega168A) or defined(FPC_MCU_ATmega168P) or defined(FPC_MCU_ATmega168PA) or defined(FPC_MCU_ATmega168PB)}
+  SIGNATURE_0 = $1E;
+{$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
+  RAMSTART  = $100;
+  NRWWSTART = $1C00;
+  // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
+  // For all others we use predefined signatures like AVR-GCC does.
+  SIGNATURE_1 = $93;
+  SIGNATURE_2 = $07;
+{$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P) or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
+  RAMSTART  = $100;
+  NRWWSTART = $1800;
+  SIGNATURE_1 = $93;
+  {$if defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A)}
+    SIGNATURE_2 = $0A;
+  {$elseif defined(FPC_MCU_ATmega88PA)}
+    SIGNATURE_2 = $0F;
+  {$elseif defined(FPC_MCU_ATmega88PB)}
+    SIGNATURE_2 = $16;
+  {$endif}
+{$elseif defined(FPC_MCU_ATmega168) or defined(FPC_MCU_ATmega168A) or defined(FPC_MCU_ATmega168P) or defined(FPC_MCU_ATmega168PA) or defined(FPC_MCU_ATmega168PB)}
   RAMSTART  = $100;
   NRWWSTART = $3800;
+  SIGNATURE_1 = $94;
+  {$if defined(FPC_MCU_ATmega168) or defined(FPC_MCU_ATmega168A)}
+    SIGNATURE_2 = $06;
+  {$elseif defined(FPC_MCU_ATmega168PA)}
+    SIGNATURE_2 = $0B;
+  {$elseif defined(FPC_MCU_ATmega168PB)}
+    SIGNATURE_2 = $15;
+  {$endif}
 {$elseif defined(FPC_MCU_ATmega328) or defined(FPC_MCU_ATmega328P) or defined(FPC_MCU_ATmega328PB)}
   RAMSTART  = $100;
   NRWWSTART = $7000;
+  SIGNATURE_1 = $95;
+  {$if defined(FPC_MCU_ATmega328)}
+    SIGNATURE_2 = $14;
+  {$elseif defined(FPC_MCU_ATmega328P)}
+    SIGNATURE_2 = $0F;
+  {$elseif defined(FPC_MCU_ATmega328PB)}
+    SIGNATURE_2 = $16;
+  {$endif}
 {$elseif defined (FPC_MCU_ATmega644) or defined (FPC_MCU_ATmega644P) or defined (FPC_MCU_ATmega644PA) or defined (FPC_MCU_ATmega644PB)}
   RAMSTART  = $100;
+  NRWWSTART = $E000;
+  SIGNATURE_1 = $96;
+  {$if defined(FPC_MCU_ATmega644) or defined(FPC_MCU_ATmega644A)}
+    SIGNATURE_2 = $09;
+  {$elseif defined(FPC_MCU_ATmega644PA)}
+    SIGNATURE_2 = $0A;
+  {$endif}
+{$elseif defined(FPC_MCU_ATmega1280)}
+  RAMSTART  = $200;
   NRWWSTART = $E000;
 {$elseif defined(FPC_MCU_ATtiny84) or defined(FPC_MCU_ATtiny84A)}
   RAMSTART  = $100;
   NRWWSTART = $0000;
-{$elseif defined(FPC_MCU_ATmega1280)}
-  RAMSTART  = $200;
-  NRWWSTART = $E000;
-{$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P) or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
-  RAMSTART  = $100;
-  NRWWSTART = $1800;
-{$elseif defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
-  RAMSTART  = $100;
-  NRWWSTART = $1C00;
-  // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
-  // For all others we use predefined signaures like AVR-GCC does.
-  SIGNATURE_0 = $1E;
-  SIGNATURE_1 = $93;
-  SIGNATURE_2 = $07;
 {$endif}
 
   // Z register values to read signature/calibration info
@@ -80,7 +110,10 @@ type
 procedure spm_busy_wait; inline;
 procedure eeprom_busy_wait; inline;
 
+{$if not declared(SIGNATURE_2)}
+// Only read signatures if not predefined
 function readSignatureCalibrationByte(const index: byte): byte;
+{$endif}
 
 function readFuseLockBits(const index: byte): byte;
 procedure writeLockBits(const lockBits: byte);
@@ -120,6 +153,7 @@ begin
   until (EECR and (1 shl xEEPE)) = 0;
 end;
 
+{$if not declared(SIGNATURE_2)}
 function readSignatureCalibrationByte(const index: byte): byte; assembler; nostackframe;
 const
   SIGRD = 5;
@@ -131,6 +165,7 @@ asm
   out xSPMCSR+(-32), r24
   lpm r24, Z
 end;
+{$endif}
 
 function readFuseLockBits(const index: byte): byte; assembler; nostackframe;
 const

@@ -406,13 +406,13 @@ begin
         if c = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
-          // For all others we use predefined signaures like AVR-GCC does.
-          {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
+          {$if declared(SIGNATURE_2)}
+          // Return predefined signatures
           uart_transmit(SIGNATURE_0);
           uart_transmit(SIGNATURE_1);
           uart_transmit(SIGNATURE_2);
           {$else}
+          // Read chip signatures
           uart_transmit(readSignatureCalibrationByte(deviceSignature1_Z));
           uart_transmit(readSignatureCalibrationByte(deviceSignature2_Z));
           uart_transmit(readSignatureCalibrationByte(deviceSignature3_Z));
