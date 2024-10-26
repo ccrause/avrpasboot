@@ -258,8 +258,7 @@ begin
 
       Cmnd_STK_LOAD_ADDRESS:
       begin
-        uart_receive_buffer(@buf[0], 2);
-        address := buf[0] + word(buf[1]) shl 8;
+        uart_receive_buffer(@address, 2);
         {$if declared(RAMPZ)}
         if (address and $8000) = 0 then
           RAMPZ := RAMPZ and $FE
@@ -372,8 +371,7 @@ begin
             i := 0;
             while i < size do
             begin
-              data := databuf[i] + (word(databuf[i + 1]) shl 8);
-              flashPageFill(address + i, data);
+              flashPageFill(address + i, databuf[i] + (word(databuf[i + 1]) shl 8));
               inc(i, 2);
             end;
             flashPageWrite(address);
