@@ -25,13 +25,7 @@ var
   buf: array[0..15] of byte;
   databuf: array [0..flashPageSize-1] of byte;
 
-  // Information not yet used, so could be removed in future
-  {$ifndef arduino}
-  deviceParams: TDeviceParameters;
-  deviceParamsEx: TDeviceParametersEx;
-  {$endif}
-
-  address, size, data, i: word;
+  address, size, i: word;
   startupStatus: byte;
   LEDport: byte absolute PORTB;
   LEDDDR: byte absolute DDRB;
@@ -273,7 +267,7 @@ begin
             case buf[2] of
               // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
               // For all others we use predefined signaures like AVR-GCC does.
-              {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
+              {$if declared(SIGNATURE_2)}
               0: uart_transmit(SIGNATURE_0);
               1: uart_transmit(SIGNATURE_1);
               2: uart_transmit(SIGNATURE_2);

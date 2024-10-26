@@ -110,7 +110,7 @@ type
 procedure spm_busy_wait; inline;
 procedure eeprom_busy_wait; inline;
 
-{$if not declared(SIGNATURE_2)}
+{$if not declared(SIGNATURE_2) or not defined(arduino)}
 // Only read signatures if not predefined
 function readSignatureCalibrationByte(const index: byte): byte;
 {$endif}
@@ -155,7 +155,7 @@ begin
   until (EECR and (1 shl xEEPE)) = 0;
 end;
 
-{$if not declared(SIGNATURE_2)}
+{$if not declared(SIGNATURE_2) or not defined(arduino)}
 function readSignatureCalibrationByte(const index: byte): byte; assembler; nostackframe;
 const
   SIGRD = 5;
