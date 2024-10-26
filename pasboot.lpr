@@ -30,6 +30,31 @@ var
   LEDport: byte absolute PORTB;
   LEDDDR: byte absolute DDRB;
 
+  // Information not used currently
+  deviceParams: TDeviceParameters;
+  deviceParamsEx: TDeviceParametersEx;
+
+{$ifdef VER3_3_1}
+  pascalmain: record end; external name 'PASCALMAIN';
+
+// Simplified startup code without data initialization
+procedure init0; assembler; nostackframe; noreturn; section '.init.0';
+const
+  initSP = FPC_SRAMBASE + FPC_SRAMSIZE-1;
+  SPL_ = byte(@SPL) - $20;
+  SPH_ = byte(@SPH) - $20;
+asm
+  // Clear zero register
+  clr r1
+  // Set stack pointer
+  ldi r18, hi8(initSP)
+  out SPH_, r18
+  ldi r18, lo8(initSP)
+  out SPL_, r18
+  {$ifdef CPUAVR_HAS_JMP_CALL}jmp{$else}rjmp{$endif} pascalmain
+end;
+{$endif}
+
 procedure uart_transmit_buffer(data: PByte; len: byte);
 begin
   while len > 0 do
@@ -93,22 +118,18 @@ begin
   // Disable watchdog
   avr_cli;
   avr_wdr;
-  xMCUSR := xMCUSR and ($FF xor (1 shl WDRF));
-  xWDTCSR := (1 shl WDCE) or (1 shl WDE);
+  // Clear Disable watchdog
+  xMCUSR := xMCUSR and not(1 shl WDRF);
+  xWDTCSR := xWDTCSR or ((1 shl WDCE) or (1 shl WDE));
   xWDTCSR := 0;
-  SREG := 0;
 
-  // Can omit all startup code with compiler version >= 3.3.1
-  // Just need to clear register r1
-  {$ifdef VER3_3_1}
-  asm clr r1 end;
-  {$endif}
+  SREG := 0;
 
   LEDDDR := LEDDDR or (1 shl LEDpin);
 
   { Read reset cause
     If reset cause = 0 it means application code ran into bootloader, so probably
-    no valid application, so start bootloader anyway.
+    no valid application, start bootloader anyway.
     If not external reset, start application.
     TODO: Check if there is valid code at application start before jumping there.
           Currently bootloader gets started anyway, just a little later...
@@ -125,19 +146,18 @@ begin
     end;
   end;
 
-  // Set watchdog to 2s timeout
-  // this enables the watchdog interrupt which is used to start the main application
   avr_cli;
   avr_wdr;
-  xMCUSR := xMCUSR and ($FF xor (1 shl WDRF));
+  // Set watchdog to 2s timeout
+  // this enables the watchdog interrupt which is used to start the main application
   xWDTCSR := (1 shl WDCE) or (1 shl WDE);
   xWDTCSR := (1 shl WDE) or 7; // 2s timeout
   SREG := 0;
 
   LEDport := LEDport or (1 shl LEDpin);
-  delay_ms(100);
+  delay_ms(400);
   LEDport := LEDport and not (1 shl LEDpin);
-  delay_ms(100);
+  delay_ms(200);
   LEDport := LEDport or (1 shl LEDpin);
   delay_ms(100);
   LEDport := LEDport and not (1 shl LEDpin);
@@ -197,21 +217,17 @@ begin
         end;
       end;
 
-      {$ifndef arduino}
       Cmnd_STK_SET_DEVICE:
       begin
-        // Data not used, so currently it could just be discarded
         uart_receive_buffer(@deviceParams.bytes[0], SizeOf(deviceParams));
         checkAndReply;
       end;
 
       Cmnd_STK_SET_DEVICE_EXT:
       begin
-        // Data not used, so currently it could just be discarded
         uart_receive_buffer(@deviceParamsEx.bytes[0], SizeOf(deviceParamsEx));
         checkAndReply;
       end;
-      {$endif arduino}
 
       //Cmnd_STK_ENTER_PROGMODE: nothing specific to do
 
