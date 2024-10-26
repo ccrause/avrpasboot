@@ -130,8 +130,10 @@ procedure flashPageErase(const address: uint16);
 procedure flashPageFill(const address, data: uint16);
 procedure flashPageWrite(const address: uint16);
 
+{$ifndef arduino}
 function EEPROMReadByte(const addr: TEEPROMAddress): byte;
 procedure EEPROMWriteByte(const addr: TEEPROMAddress; const data: byte);
+{$endif}
 
 implementation
 
@@ -247,6 +249,7 @@ asm
   spm
 end;
 
+{$ifndef arduino}
 // TODO: Perhaps also change addr parameter to byte size if EEAR is not declared.
 function EEPROMReadByte(const addr: TEEPROMAddress): byte;
 begin
@@ -276,6 +279,7 @@ begin
   EECR := (1 shl xEEMPE);
   EECR := (1 shl xEEPE);
 end;
+{$endif}
 
 end.
 

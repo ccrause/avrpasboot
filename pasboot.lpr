@@ -216,6 +216,7 @@ begin
         checkAndReply;
       end;
 
+      {$ifndef arduino}
       Cmnd_STK_CHIP_ERASE:
       begin
         c := uart_receive;
@@ -227,6 +228,7 @@ begin
         else
           uart_transmit(Resp_STK_NOSYNC);
       end;
+      {$endif}
 
       //Cmnd_STK_CHECK_AUTOINC
       //Cmnd_STK_CHECK_DEVICE
@@ -360,8 +362,10 @@ begin
           end
           else // program EEPROM
           begin
+            {$ifndef arduino}
             for i := 0 to size-1 do
               EEPROMWriteByte(address + i, databuf[i]);
+            {$endif}
           end;
 
           checkAndReply;
@@ -390,8 +394,10 @@ begin
           end
           else // read EEPROM
           begin
+            {$ifndef arduino}
             for i := 0 to size-1 do
               uart_transmit(EEPROMReadByte(address + i));
+            {$endif}
           end;
 
           uart_transmit(Resp_STK_OK);
