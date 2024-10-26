@@ -18,14 +18,18 @@ const
   LEDpin = 5;
 
 var
-  // Note: if no RTL startup code is used, all variables will be uninitialized
-  // so ensure all variables are assigned before use.
+  // Note: if no RTL startup code is used (compiler version 3.3.1),
+  // all variables will be uninitialized so ensure all variables are assigned
+  // before use.
   b, c: byte;
   buf: array[0..15] of byte;
   databuf: array [0..flashPageSize-1] of byte;
+
   // Information not yet used, so could be removed in future
+  {$ifndef arduino}
   deviceParams: TDeviceParameters;
   deviceParamsEx: TDeviceParametersEx;
+  {$endif}
 
   address, size, data, i: word;
   startupStatus: byte;
@@ -57,16 +61,17 @@ var
   c: byte;
 begin
   c := uart_receive;
-  if c = Sync_CRC_EOP then
+
+  if c <> Sync_CRC_EOP then
+    uart_transmit(c)
+  else
   begin
     uart_transmit(Resp_STK_INSYNC);
     uart_transmit(Resp_STK_OK);
-  end
-  else
-    uart_transmit(c);
+  end;
 end;
 
-procedure checkAndReplyByte(b: byte);
+procedure checkAndReplyByte(const b: byte);
 var
   c: byte;
 begin
@@ -99,6 +104,14 @@ begin
   xWDTCSR := 0;
   SREG := 0;
 
+  // Can omit all startup code with compiler version >= 3.3.1
+  // Just need to clear register r1
+  {$ifdef VER3_3_1}
+  asm clr r1 end;
+  {$endif}
+
+  LEDDDR := LEDDDR or (1 shl LEDpin);
+
   { Read reset cause
     If reset cause = 0 it means application code ran into bootloader, so probably
     no valid application, so start bootloader anyway.
@@ -109,11 +122,10 @@ begin
   if (startupStatus > 0) and ((startupStatus and (1 shl EXTRF)) = 0) then
   begin
     // Brief LED flash
-    LEDDDR := 1 shl LEDpin;
-    LEDport := 1 shl LEDpin;
+    LEDport := LEDport or (1 shl LEDpin);
     delay_ms(100);
-    LEDport := 0;
-    LEDDDR := 0;
+    LEDport := LEDport and not (1 shl LEDpin);
+    LEDDDR := LEDDDR and not (1 shl LEDpin);
     asm
       {$ifdef CPUAVR_HAS_JMP_CALL}jmp 0{$else}rjmp 0{$endif}
     end;
@@ -128,14 +140,13 @@ begin
   xWDTCSR := (1 shl WDE) or 7; // 2s timeout
   SREG := 0;
 
-  LEDDDR := 1 shl LEDpin;
-  LEDport := 1 shl LEDpin;
+  LEDport := LEDport or (1 shl LEDpin);
   delay_ms(100);
-  LEDport := 0;
+  LEDport := LEDport and not (1 shl LEDpin);
   delay_ms(100);
-  LEDport := 1 shl LEDpin;
+  LEDport := LEDport or (1 shl LEDpin);
   delay_ms(100);
-  LEDport := 0;
+  LEDport := LEDport and not (1 shl LEDpin);
 
   uart_init;
 
@@ -192,6 +203,7 @@ begin
         end;
       end;
 
+      {$ifndef arduino}
       Cmnd_STK_SET_DEVICE:
       begin
         // Data not used, so currently it could just be discarded
@@ -205,6 +217,7 @@ begin
         uart_receive_buffer(@deviceParamsEx.bytes[0], SizeOf(deviceParamsEx));
         checkAndReply;
       end;
+      {$endif arduino}
 
       //Cmnd_STK_ENTER_PROGMODE: nothing specific to do
 
@@ -335,13 +348,12 @@ begin
         size := (word(buf[0]) shl 8) + buf[1];   // TODO: Check if size is larger that page size?
         // If page size > 128 (i.e. 256),
         // break read into 2
-        if size > 128 then
-        begin
-          uart_receive_buffer(@databuf[0], 128);
-          uart_receive_buffer(@databuf[128], 128);
-        end
-        else
-          uart_receive_buffer(@databuf[0], size);
+        {$if flashPageSize > 128}
+        uart_receive_buffer(@databuf[0], 128);
+        uart_receive_buffer(@databuf[128], 128);
+        {$else flashPageSize <= 128}
+        uart_receive_buffer(@databuf[0], size);
+        {$endif}
         begin
           if char(buf[2]) = 'F' then
           begin

@@ -29,7 +29,7 @@
             <TargetCPU Value="avr"/>
             <TargetOS Value="embedded"/>
             <Optimizations>
-              <OptimizationLevel Value="3"/>
+              <OptimizationLevel Value="4"/>
             </Optimizations>
           </CodeGeneration>
           <Linking>
@@ -49,7 +49,8 @@
             <CustomOptions Value="-Wpatmega328p
 -Sm
 -dF_CPU:=16000000
--dSTK500V1"/>
+-darduino
+-Cdcjsz"/>
             <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.3.1/ppcrossavr"/>
             <ExecuteAfter>
               <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
@@ -98,6 +99,48 @@
             <ExecuteAfter>
               <Command Value="avr-objdump -S $(targetfile)"/>
               <CompileReasons Build="False" Run="False"/>
+            </ExecuteAfter>
+          </Other>
+        </CompilerOptions>
+      </Item>
+      <Item Name="m328p-3.2.2">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="pasboot"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <CodeGeneration>
+            <TargetCPU Value="avr"/>
+            <TargetOS Value="embedded"/>
+            <Optimizations>
+              <OptimizationLevel Value="4"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf3"/>
+              <UseLineInfoUnit Value="False"/>
+            </Debugging>
+            <Options>
+              <PassLinkerOptions Value="True"/>
+              <LinkerOptions Value="--section-start=.text=0x7000"/>
+            </Options>
+          </Linking>
+          <Other>
+            <Verbosity>
+              <ShowAll Value="True"/>
+            </Verbosity>
+            <CustomOptions Value="-Wpatmega328p
+-Sm
+-dF_CPU:=16000000
+-darduino"/>
+            <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.2.2/ppcrossavr"/>
+            <ExecuteAfter>
+              <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
             </ExecuteAfter>
           </Other>
         </CompilerOptions>
