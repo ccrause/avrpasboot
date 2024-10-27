@@ -137,7 +137,7 @@
             <CustomOptions Value="-Wpatmega328p
 -Sm
 -dF_CPU:=16000000
--darduino"/>
+-dstk500v1"/>
             <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.2.2/ppcrossavr"/>
             <ExecuteAfter>
               <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
