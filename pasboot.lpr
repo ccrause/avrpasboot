@@ -20,6 +20,7 @@ const
   {$else}
   LEDpin = 5;
   {$endif}
+  flashEnd = FPC_FLASHSIZE;
 
 type
   TWordRecord = packed record
@@ -118,6 +119,12 @@ const
   WDCE = WDTOE; // atmega16 seems to be the exception
 {$endif}
 
+{$if not defined(CPUAVR_HAS_JMP_CALL)}
+// Remember to define rebootstart symbol:
+// -k "--defsym rebootstart=0"
+procedure rebootStart; external name 'rebootstart';
+{$endif}
+
 begin
   b := xMCUSR;
   xMCUSR := 0;
@@ -146,7 +153,11 @@ begin
     LEDport := LEDport and not (1 shl LEDpin);
     LEDDDR := LEDDDR and not (1 shl LEDpin);
     asm
-      {$ifdef CPUAVR_HAS_JMP_CALL}jmp 0{$else}rjmp 0{$endif}
+      {$ifdef CPUAVR_HAS_JMP_CALL}
+      jmp 0
+      {$else}
+      rjmp rebootstart
+      {$endif}
     end;
   end;
 

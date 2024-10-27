@@ -6,18 +6,13 @@ interface
 
 const
   SIGNATURE_0 = $1E;
-{$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
-  RAMSTART  = $100;
-  NRWWSTART = $1C00;
-  // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
-  // For all others we use predefined signatures like AVR-GCC does.
-  SIGNATURE_1 = $93;
-  SIGNATURE_2 = $07;
-{$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P) or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
+{$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A) or defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A) or defined(FPC_MCU_ATmega88P) or defined(FPC_MCU_ATmega88PA)  or defined(FPC_MCU_ATmega88PB)}
   RAMSTART  = $100;
   NRWWSTART = $1800;
   SIGNATURE_1 = $93;
-  {$if defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A)}
+  {$if defined(FPC_MCU_ATmega8) or defined(FPC_MCU_ATmega8A)}
+  SIGNATURE_2 = $07;
+  {$elseif defined(FPC_MCU_ATmega88) or defined(FPC_MCU_ATmega88A)}
     SIGNATURE_2 = $0A;
   {$elseif defined(FPC_MCU_ATmega88PA)}
     SIGNATURE_2 = $0F;
@@ -55,9 +50,24 @@ const
   {$elseif defined(FPC_MCU_ATmega644PA)}
     SIGNATURE_2 = $0A;
   {$endif}
-{$elseif defined(FPC_MCU_ATmega1280)}
+{$elseif defined(FPC_MCU_ATmega1280) or defined(FPC_MCU_ATmega1281)}
   RAMSTART  = $200;
-  NRWWSTART = $E000;
+  NRWWSTART = $1E000;
+  SIGNATURE_1 = $97;
+  {$if defined(FPC_MCU_ATmega1280)}
+    SIGNATURE_2 = $03;
+  {$elseif defined(FPC_MCU_ATmega1281)}
+    SIGNATURE_2 = $04;
+  {$endif}
+{$elseif defined(FPC_MCU_ATmega2560) or defined(FPC_MCU_ATmega1561)}
+  RAMSTART  = $200;
+  NRWWSTART = $3E000;
+  SIGNATURE_1 = $98;
+  {$if defined(FPC_MCU_ATmega2560)}
+    SIGNATURE_2 = $01;
+  {$elseif defined(FPC_MCU_ATmega2561)}
+    SIGNATURE_2 = $02;
+  {$endif}
 {$elseif defined(FPC_MCU_ATtiny84) or defined(FPC_MCU_ATtiny84A)}
   RAMSTART  = $100;
   NRWWSTART = $0000;
