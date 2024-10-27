@@ -17,16 +17,21 @@ const
   lockBitMask = $C0;  // Undefined bits should be written as 1 for future compatibility
   LEDpin = 5;
 
+type
+  TWordRecord = packed record
+    case boolean of
+      false: (lsb, msb: byte);
+      true : (val: word);
+  end;
+
 var
   // Note: if no RTL startup code is used (compiler version 3.3.1),
   // all variables will be uninitialized so ensure all variables are assigned
   // before use.
-  b, c: byte;
-  buf: array[0..15] of byte;
-  databuf: array [0..flashPageSize-1] of byte;
+  b: byte;
+  buffer: array [0..flashPageSize-1] of byte;
 
   address, size, i: word;
-  startupStatus: byte;
   LEDport: byte absolute PORTB;
   LEDDDR: byte absolute DDRB;
 
@@ -91,11 +96,8 @@ begin
 end;
 
 procedure checkAndReplyByte(const b: byte);
-var
-  c: byte;
 begin
-  c := uart_receive;
-  if c = Sync_CRC_EOP then
+  if uart_receive = Sync_CRC_EOP then
   begin
     uart_transmit(Resp_STK_INSYNC);
     uart_transmit(b);
@@ -113,7 +115,7 @@ const
 {$endif}
 
 begin
-  startupStatus := xMCUSR;
+  b := xMCUSR;
   xMCUSR := 0;
   // Disable watchdog
   avr_cli;
@@ -122,8 +124,6 @@ begin
   xMCUSR := xMCUSR and not(1 shl WDRF);
   xWDTCSR := xWDTCSR or ((1 shl WDCE) or (1 shl WDE));
   xWDTCSR := 0;
-
-  SREG := 0;
 
   LEDDDR := LEDDDR or (1 shl LEDpin);
 
@@ -134,7 +134,7 @@ begin
     TODO: Check if there is valid code at application start before jumping there.
           Currently bootloader gets started anyway, just a little later...
   }
-  if (startupStatus > 0) and ((startupStatus and (1 shl EXTRF)) = 0) then
+  if (b > 0) and ((b and (1 shl EXTRF)) = 0) then
   begin
     // Brief LED flash
     LEDport := LEDport or (1 shl LEDpin);
@@ -165,10 +165,9 @@ begin
   uart_init;
 
   repeat
-    b := uart_receive;
     // Reset watchdog
     avr_wdr;
-    case b of
+    case uart_receive of
       Sync_CRC_EOP: uart_transmit(Resp_STK_NOSYNC);
 
       //Cmnd_STK_GET_SYNC:
@@ -176,12 +175,16 @@ begin
       {$ifndef arduino}
       Cmnd_STK_GET_SIGN_ON:
       begin
-        c := uart_receive;
-        if c = Sync_CRC_EOP then
+        if uart_receive = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          move(STK_SIGN_ON_MESSAGE, buf[0], length(STK_SIGN_ON_MESSAGE));
-          uart_transmit_buffer(@buf[0], length(STK_SIGN_ON_MESSAGE));
+          uart_transmit(ord('A'));
+          uart_transmit(ord('V'));
+          uart_transmit(ord('R'));
+          uart_transmit(ord(' '));
+          uart_transmit(ord('S'));
+          uart_transmit(ord('T'));
+          uart_transmit(ord('K'));
           uart_transmit(Resp_STK_OK);
         end
         else
@@ -192,11 +195,12 @@ begin
       {$ifndef arduino}
       Cmnd_STK_SET_PARAMETER:
       begin
-        uart_receive_buffer(@buf[0], 3);
-        if buf[2] = Sync_CRC_EOP then
+        b := uart_receive;
+        uart_receive;
+        if uart_receive = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          uart_transmit(buf[0]);
+          uart_transmit(b);
           uart_transmit(Resp_STK_FAILED); // indicate not supported
         end
         else
@@ -206,12 +210,9 @@ begin
 
       Cmnd_STK_GET_PARAMETER:
       begin
-        b := uart_receive;
-        case b of
-          //Parm_STK_HW_VER:          checkAndReplyByte(2);
+        case uart_receive of
           Parm_STK_SW_MAJOR:        checkAndReplyByte(1);
           Parm_STK_SW_MINOR:        checkAndReplyByte(18);
-          //Parm_STK_PROGMODE:        checkAndReplyByte(ord('S'));
         else
           checkAndReplyByte(3);
         end;
@@ -242,8 +243,7 @@ begin
       {$ifndef arduino}
       Cmnd_STK_CHIP_ERASE:
       begin
-        c := uart_receive;
-        if c = Sync_CRC_EOP then
+        if uart_receive = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
           uart_transmit(Resp_STK_FAILED); // indicate not supported
@@ -258,6 +258,7 @@ begin
 
       Cmnd_STK_LOAD_ADDRESS:
       begin
+        // Address in LE format
         uart_receive_buffer(@address, 2);
         {$if declared(RAMPZ)}
         if (address and $8000) = 0 then
@@ -272,14 +273,14 @@ begin
 
       Cmnd_STK_UNIVERSAL:
       begin
-        uart_receive_buffer(@buf[0], 5);
-        if buf[4] = Sync_CRC_EOP then
+        uart_receive_buffer(@buffer[0], 5);
+        if buffer[4] = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
           {$ifndef arduino}
-          if buf[0] = $30 then  // Read signature byte
+          if buffer[0] = $30 then  // Read signature byte
           begin
-            case buf[2] of
+            case buffer[2] of
               // We can only read the signature with the AVRs that have SIGRD bit in SPMCR.
               // For all others we use predefined signaures like AVR-GCC does.
               {$if declared(SIGNATURE_2)}
@@ -300,40 +301,40 @@ begin
 
           {$if declared(RAMPZ)}
           // Handle extended address byte
-          if buf[0] = $4D then
+          if buffer[0] = $4D then
           begin
-            RAMPZ := (RAMPZ and 1) or (buf[2] shl 1); // convert from word address to byte address
+            RAMPZ := (RAMPZ and 1) or (buffer[2] shl 1); // convert from word address to byte address
             uart_transmit(0);
           end{$ifndef arduino} else {$else};{$endif}
           {$endif declared(RAMPZ)}
 
           {$ifndef arduino}
           // Support for fuse bits
-          if buf[0] = $50 then
+          if buffer[0] = $50 then
           begin
-            case buf[1] of
+            case buffer[1] of
               0: uart_transmit(readFuseLockBits(deviceFuseLow_Z));
               8: uart_transmit(readFuseLockBits(deviceFuseExt_Z));
             otherwise
               uart_transmit(0);
             end;
           end
-          else if (buf[0] = $58) and (buf[1] = 8) then
+          else if (buffer[0] = $58) and (buffer[1] = 8) then
             uart_transmit(readFuseLockBits(deviceFuseHigh_Z))
-          else if (buf[0] = $AC) and (buf[1] = $80) then
+          else if (buffer[0] = $AC) and (buffer[1] = $80) then
           begin
             //eraseChip;  Erasure of all memory not supported. Memory is erased just before being written n page or byte level.
             // Note: this implies that old data cannot be deleted unless it is overwritten by new data.
             uart_transmit(0);
           end
-          else if (buf[0] = $58) and (buf[1] = 0) then
+          else if (buffer[0] = $58) and (buffer[1] = 0) then
             uart_transmit(readFuseLockBits(deviceLockbits_Z))
-          else if (buf[0] = $AC) and (buf[1] = $E0) then
+          else if (buffer[0] = $AC) and (buffer[1] = $E0) then
           begin
-            writeLockBits(buf[3] or lockBitMask);
-            uart_transmit(buf[3]);
+            writeLockBits(buffer[3] or lockBitMask);
+            uart_transmit(buffer[3]);
           end
-          else if (buf[0] = $38) and (buf[1] = $00) then
+          else if (buffer[0] = $38) and (buffer[1] = $00) then
             uart_transmit(readSignatureCalibrationByte(deviceOscCal_Z))
           else
             uart_transmit(0);  // dummy reply
@@ -352,25 +353,27 @@ begin
 
       Cmnd_STK_PROG_PAGE:
       begin
-        uart_receive_buffer(@buf[0], 3);
-        size := (word(buf[0]) shl 8) + buf[1];   // TODO: Check if size is larger that page size?
+        // Size is transmitted in BE format
+        TWordRecord(size).msb := uart_receive;
+        TWordRecord(size).lsb := uart_receive;
+        b := uart_receive;
         // If page size > 128 (i.e. 256),
         // break read into 2
         {$if flashPageSize > 128}
-        uart_receive_buffer(@databuf[0], 128);
-        uart_receive_buffer(@databuf[128], 128);
+        uart_receive_buffer(@buffer[0], 128);
+        uart_receive_buffer(@buffer[128], 128);
         {$else flashPageSize <= 128}
-        uart_receive_buffer(@databuf[0], size);
+        uart_receive_buffer(@buffer[0], size);
         {$endif}
         begin
-          if char(buf[2]) = 'F' then
+          if char(b) = 'F' then
           begin
             flashPageErase(address);
             spm_busy_wait;
             i := 0;
             while i < size do
             begin
-              flashPageFill(address + i, databuf[i] + (word(databuf[i + 1]) shl 8));
+              flashPageFill(address + i, buffer[i] + (word(buffer[i + 1]) shl 8));
               inc(i, 2);
             end;
             flashPageWrite(address);
@@ -383,7 +386,7 @@ begin
           begin
             {$ifndef arduino}
             for i := 0 to size-1 do
-              EEPROMWriteByte(address + i, databuf[i]);
+              EEPROMWriteByte(address + i, buffer[i]);
             {$endif}
           end;
 
@@ -399,14 +402,15 @@ begin
 
       Cmnd_STK_READ_PAGE:
       begin
-        uart_receive_buffer(@buf[0], 3);
-        size := (word(buf[0]) shl 8) + buf[1];
+        // Size is transmitted in BE format
+        TWordRecord(size).msb := uart_receive;
+        TWordRecord(size).lsb := uart_receive;
+        b := uart_receive;
 
-        c := uart_receive;
-        if c = Sync_CRC_EOP then
+        if uart_receive = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
-          if char(buf[2]) = 'F' then
+          if char(b) = 'F' then
           begin
             for i := 0 to size-1 do
               uart_transmit(flashReadByte(address + i));
@@ -427,8 +431,7 @@ begin
 
       Cmnd_STK_READ_SIGN:
       begin
-        c := uart_receive;
-        if c = Sync_CRC_EOP then
+        if uart_receive = Sync_CRC_EOP then
         begin
           uart_transmit(Resp_STK_INSYNC);
           {$if declared(SIGNATURE_2)}
