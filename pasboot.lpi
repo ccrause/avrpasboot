@@ -91,14 +91,15 @@
             </Verbosity>
             <CustomOptions Value="-Wpatmega2560
 -Sm
--dF_CPU:=16000000"/>
+-dF_CPU:=16000000
+-dstk500v1"/>
             <CompilerPath Value="/home/christo/fpc/installs/lib/fpc/3.3.1/ppcrossavr"/>
             <ExecuteBefore>
               <CompileReasons Compile="False" Build="False" Run="False"/>
             </ExecuteBefore>
             <ExecuteAfter>
-              <Command Value="avr-objdump -S $(targetfile)"/>
-              <CompileReasons Build="False" Run="False"/>
+              <Command Value="~/fpc/fpc-avr/src/scripts/listasm.sh $(targetfile)"/>
+              <CompileReasons Run="False"/>
             </ExecuteAfter>
           </Other>
         </CompilerOptions>

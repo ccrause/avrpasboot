@@ -15,7 +15,11 @@ uses
 
 const
   lockBitMask = $C0;  // Undefined bits should be written as 1 for future compatibility
+  {$ifdef FPC_MCU_ATMEGA2560}
+  LEDpin = 7;
+  {$else}
   LEDpin = 5;
+  {$endif}
 
 type
   TWordRecord = packed record
